@@ -1,0 +1,10 @@
+POST http://localhost:3001/api/blogs
+content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InZiIiwiaWQiOiI1YjcwNTBjZGM0OGM1MzMzMDQ1N2Q4YjMiLCJpYXQiOjE1MzQwODczNzN9.QP2wgyWHQZhj1680UPSiaP3iKgb39LSN-W0fNfJj84w
+
+{
+  "author": "Name",
+  "title": "title",
+  "url": "http::sivusto",
+  "likes": 4
+}
