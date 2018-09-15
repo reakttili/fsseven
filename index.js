@@ -14,6 +14,7 @@ mongoose.connect(config.mongoUrl)
 
 
 app.use(cors())
+app.use(express.static('build'))
 app.use(bodyParser.json())
 app.use(middleware.tokenExtractor)
 app.use('/api/blogs', blogRouter)

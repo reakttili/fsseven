@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "web": "node index.js",
-    "start": "cross-env NODE_ENV=production node index.js",
-    "watch": "cross-env NODE_ENV=development nodemon index.js",
-    "test": "cross-env NODE_ENV=test node_modules/.bin/jest --verbose",
+    "start": "NODE_ENV=production node index.js",
+    "watch": "NODE_ENV=development nodemon index.js",
+    "test": "NODE_ENV=test node_modules/.bin/jest --verbose",
     "lint": "node_modules/.bin/eslint ."
   },
   "author": "Ville Byman",
