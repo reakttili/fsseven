@@ -22,6 +22,7 @@ blogRouter.put('/:id', async (request, response) => {
       const b = await Blog.findById(request.params.id)
       const tokenString = request.token//request.headers.authorization.slice(7,)
       let decodedToken = jwt.verify(tokenString, process.env.SECRET)
+      
       if (!b.user.toString()===decodedToken.id) {
         return response.status(401).json({ error: 'token missing or invalid' })
       }

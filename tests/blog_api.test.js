@@ -16,17 +16,18 @@ describe.only('Single tests', async () => {
   beforeEach(async () => {
     await User.remove( { _id : { $ne: '5b9e81f0b4cf540c1449755c' } } )
     let user = await User.find({})
-    console.log('USER HERE', user)
+    //console.log('USER HERE', user[0]._id)
     const initialBlogs = blogs
     await Blog.remove({})
     const noteObjects = initialBlogs.map(b => {
       let blog = new Blog(b)
       //console.log('ser here', user)
-      //blog.user = user
-      //console.log(blog)
+      blog.user = user[0]._id
       return blog
     })
-    await Promise.all(noteObjects.map(b => b.save()))
+    await Promise.all(noteObjects.map(b => {
+      return b.save()
+    }))
   })
 
   test('notes are returned as json', async () => {
@@ -161,9 +162,9 @@ describe('when there is initially some blogs saved', async () => {
       //adult: Boolean,
       //notes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Blog' }]
     }
-    console.log('post new user')
+    //console.log('post new user')
     await api.post('/api/users').send(newUser) // Test user
-    console.log('posted!')
+    //console.log('posted!')
 
     let blogsAtStart = await blogsInDb()
     const newBlog = {
