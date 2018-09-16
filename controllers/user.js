@@ -19,7 +19,7 @@ userRouter.post('/', async (request, response) => {
     if (!request.body.adult) {
       bIsAdult = true
     } else {
-      bIsAdult = response.boy.adult
+      bIsAdult = request.body.adult
     }
     const passwordHash = await bcrypt.hash(password,saltRounds)
     const user = new User({

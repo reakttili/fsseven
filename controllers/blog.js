@@ -122,8 +122,9 @@ blogRouter.post('/', async (request, response) => {
     //console.log("IDfrom",decodedToken.id)
     const users = await User.find({})
     //console.log(users)
+    //console.log('decotedtoken:',decodedToken)
     const user = await User.findOne({ _id: decodedToken.id })
-    //console.log(user)
+    //console.log('user:',user)
     blog.user = user._id
     if (!blog.likes) {
       blog.likes = 0

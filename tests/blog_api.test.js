@@ -5,20 +5,28 @@ const Blog = require('../models/blog')
 const User = require('../models/user')
 const { blogs,blogsInDb, usersInDb } = require('./test_helper')
 
+let bearerStr = 'bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkJWIiwiaWQiOiI1YjllODFmMGI0Y2Y1NDBjMTQ0OTc1NWMiLCJpYXQiOjE1MzcxMTQ3Njl9.gXGMwTARUEXxJiuDA7f55NojvB0-UC_lvf6ik_K-yzU'
 //npx jest -t 'Test postin'
 //https://jestjs.io/docs/en/expect
 // toContain
 // toCotainEqual
 // beforeEach vs beforeAll
 
-describe('when there is initially some blogs saved', async () => {
+describe.only('Single tests', async () => {
   beforeEach(async () => {
+    await User.remove( { _id : { $ne: '5b9e81f0b4cf540c1449755c' } } )
+    let user = await User.find({})
+    console.log('USER HERE', user)
     const initialBlogs = blogs
     await Blog.remove({})
-    
-    const noteObjects = initialBlogs.map(b => new Blog(b))
+    const noteObjects = initialBlogs.map(b => {
+      let blog = new Blog(b)
+      //console.log('ser here', user)
+      //blog.user = user
+      //console.log(blog)
+      return blog
+    })
     await Promise.all(noteObjects.map(b => b.save()))
-    await User.remove( { _id : { $ne: '5b70608e283a1e2bfc077e8c' } } )
   })
 
   test('notes are returned as json', async () => {
@@ -34,17 +42,128 @@ describe('when there is initially some blogs saved', async () => {
       expect(returnedContents).toContain(note.content)
     })
   })
+
+  test('Basic post test', async () => {
+    let blogsAtStart = await blogsInDb()
+    const newBlog = {
+      title: 'FPGA',
+      author: 'Young Chan',
+      url: 'https://fpga.com/',
+      likes: 3
+    }
+    const response = await api
+      .post('/api/blogs')
+      .set('Authorization', bearerStr)
+      .send(newBlog)  //Note: send function!
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+    const blogsAfterPost = await blogsInDb()
+    expect(response.body.title).toEqual(newBlog.title)
+    expect(blogsAfterPost.length).toBe(blogsAtStart.length + 1)
+  })
+
+  test('Likes missing', async () => {
+    let blogsAtStart = await blogsInDb()
+    const newBlog = {
+      title: 'FPGA',
+      author: 'Young Chan',
+      url: 'https://fpga.com/',
+    }
+    const response = await api
+      .post('/api/blogs')
+      .set('Authorization', bearerStr)
+      .send(newBlog)  //Note: send function!
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+    const blogsAfterPost = await blogsInDb()
+    const newblog = await blogsAfterPost.find(blog => blog.title==='FPGA')
+    expect(newblog.likes).toEqual(0)
+  })
+
+  test('Bad request post', async () => {
+    // Note: three separate tests should be done, but hope it is not necassary?
+    let blogsAtStart = await blogsInDb()
+    let newBlog = {
+      //title: 'FPGA',
+      author: 'Young Chan',
+      //url: 'https://fpga.com/',
+      likes: 5
+    }
+    let response = await api
+      .post('/api/blogs')
+      .set('Authorization', bearerStr)
+      .send(newBlog)  //Note: send function!
+      .expect(400)    // Bad request 
+      .expect('Content-Type', /application\/json/)
+    let blogsAfterPost = await blogsInDb()
+  })
+
+  test('Update test', async () => {
+    let blogsAtStart = await blogsInDb()
+    const blogToUpdate = blogsAtStart.find(blog => { return blog.title === 'React patterns'} )
+    blogToUpdate.likes = 24
+
+    console.log('id',blogToUpdate)
+    let response = await api
+      .put('/api/blogs/5a422a851b54a676234d17f7')
+      .set('Authorization', bearerStr)
+      .send(blogToUpdate)
+    let blogsAfter = await blogsInDb()
+    const updated = blogsAfter.find(blog => { return blog.title === 'React patterns'} )
+    expect(updated.likes).toEqual(24)
+  })
+
+
+  afterAll(() => {
+    console.log('Close the server.')
+    server.close()
+  })
+
+
+})
+
+
+
+describe('when there is initially some blogs saved', async () => {
+  beforeEach(async () => {
+    const initialBlogs = blogs
+    await Blog.remove({})
+    
+    const noteObjects = initialBlogs.map(b => new Blog(b))
+    await Promise.all(noteObjects.map(b => b.save()))
+    await User.remove( { _id : { $ne: '5b9e7b332eb12c1d20b67884' } } )
+  })
+
+  test('notes are returned as json', async () => {
+    const initialBlogs = blogs
+    const response = await api
+      .get('/api/blogs')
+      .expect(200) 
+      .expect('Content-Type', /application\/json/)
+    expect(response.body.length).toBe(initialBlogs.length)
+    const returnedContents = response.body.map(n => n.content)
+    initialBlogs.forEach(note => {
+      //console.log(note)
+      expect(returnedContents).toContain(note.content)
+    })
+  })
+
   test('Basic post test', async () => {
 
+    //request.body.password
+    //request.body.username
     const newUser = {
-      username: 'VB',
-      name: 'Ville',
-      password: 'salis'
+      username: 'BV',
+      name: 'elli',
+      password: 'salis',
+      adult: true
       //passwordHash: String,
       //adult: Boolean,
       //notes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Blog' }]
     }
+    console.log('post new user')
     await api.post('/api/users').send(newUser) // Test user
+    console.log('posted!')
 
     let blogsAtStart = await blogsInDb()
     const newBlog = {
@@ -55,7 +174,7 @@ describe('when there is initially some blogs saved', async () => {
     }
     const response = await api
       .post('/api/blogs')
-      .set('Authorization', 'bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZCIiwiaWQiOiI1YjcwNjA4ZTI4M2ExZTJiZmMwNzdlOGMiLCJpYXQiOjE1MzQwOTE3MTF9.viUydTOl4vgfvWYEHbxyS0Yerblk35C9EQFbHWOw91M')
+      .set('Authorization', bearerStr)
       .send(newBlog)  //Note: send function!
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -82,7 +201,7 @@ describe('when there is initially some blogs saved', async () => {
     }
     const response = await api
       .post('/api/blogs')
-      .set('Authorization', 'bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZCIiwiaWQiOiI1YjcwNjA4ZTI4M2ExZTJiZmMwNzdlOGMiLCJpYXQiOjE1MzQwOTE3MTF9.viUydTOl4vgfvWYEHbxyS0Yerblk35C9EQFbHWOw91M')
+      .set('Authorization', bearerStr)
       .send(newBlog)  //Note: send function!
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -112,7 +231,7 @@ describe('when there is initially some blogs saved', async () => {
     }
     let response = await api
       .post('/api/blogs')
-      .set('Authorization', 'bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZCIiwiaWQiOiI1YjcwNjA4ZTI4M2ExZTJiZmMwNzdlOGMiLCJpYXQiOjE1MzQwOTE3MTF9.viUydTOl4vgfvWYEHbxyS0Yerblk35C9EQFbHWOw91M')
+      .set('Authorization', bearerStr)
       .send(newBlog)  //Note: send function!
       .expect(400)    // Bad request 
       .expect('Content-Type', /application\/json/)
@@ -238,7 +357,7 @@ describe('when there is initially some blogs saved', async () => {
       }
       let response = await api
         .post('/api/blogs')
-        .set('Authorization', 'bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZCIiwiaWQiOiI1YjcwNjA4ZTI4M2ExZTJiZmMwNzdlOGMiLCJpYXQiOjE1MzQwOTE3MTF9.viUydTOl4vgfvWYEHbxyS0Yerblk35C9EQFbHWOw91M')
+        .set('Authorization', bearerStr)
         .send(newBlog)  //Note: send function!
         .expect(201)
       let blogsAfterPost = await blogsInDb()
@@ -268,7 +387,7 @@ describe('when there is initially some blogs saved', async () => {
       }
       response = await api
         .post('/api/blogs')
-        .set('Authorization', 'bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZCIiwiaWQiOiI1YjcwNjA4ZTI4M2ExZTJiZmMwNzdlOGMiLCJpYXQiOjE1MzQwOTE3MTF9.viUydTOl4vgfvWYEHbxyS0Yerblk35C9EQFbHWOw91M')
+        .set('Authorization', bearerStr)
         .send(newBlog)
         .expect(201)
       console.log(response.body)
@@ -283,7 +402,7 @@ describe('when there is initially some blogs saved', async () => {
       }
       let response = await api
         .post('/api/blogs')
-        .set('Authorization', 'bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZCIiwiaWQiOiI1YjcwNjA4ZTI4M2ExZTJiZmMwNzdlOGMiLCJpYXQiOjE1MzQwOTE3MTF9.viUydTOl4vgfvWYEHbxyS0Yerblk35C9EQFbHWOw91M')
+        .set('Authorization', bearerStr)
         .send(newBlog)
         .expect(201)
       let id = response.body.id
@@ -297,7 +416,7 @@ describe('when there is initially some blogs saved', async () => {
       // Now delete should work
       response = await api
         .delete(`/api/blogs/${id}`)
-        .set('Authorization', 'bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZCIiwiaWQiOiI1YjcwNjA4ZTI4M2ExZTJiZmMwNzdlOGMiLCJpYXQiOjE1MzQwOTE3MTF9.viUydTOl4vgfvWYEHbxyS0Yerblk35C9EQFbHWOw91M')
+        .set('Authorization', bearerStr)
         .expect(204)
     })
 
