@@ -19,7 +19,8 @@ BlogSchema.statics.formatBlog = function(blog) {
     url: blog.url,
     likes: blog.likes,
     comments: blog.comments,
-    user: blog.user
+    user: blog.user,
+    travisextra:'e'
     
   }}
 const Blog = mongoose.model('Blog', BlogSchema)
